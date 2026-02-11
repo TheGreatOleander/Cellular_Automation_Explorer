@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cellular Automaton Explorer - Maximized</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', 'Consolas', monospace;
+            background: #000;
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            grid-template-rows: 60px 1fr 200px;
+            height: 100vh;
+            gap: 1px;
+            background: #111;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .left-panel {
+            background: #0a0a0a;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #222;
+        }
+
+        .main-view {
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .right-panel {
+            background: #0a0a0a;
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 1px solid #222;
+        }
+
+        .timeline {
+            grid-column: 1 / -1;
+            background: #0a0a0a;
+            border-top: 1px solid #222;
+            position: relative;
+        }
+
+        canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: crosshair;
+            image-rendering: pixelated;
+        }
+
+        .multiverse-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .universe-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .universe-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .universe-card.active {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .universe-preview {
+            width: 100%;
+            height: 120px;
+            background: #000;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .universe-info {
+            font-size: 0.75em;
+            color: #888;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 0.85em;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.2s;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        }
+
+        button.small {
+            padding: 6px 12px;
+            font-size: 0.75em;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 8px 0;
+            accent-color: #667eea;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-family: inherit;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-label {
+            font-size: 0.7em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            color: #667eea;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        .timeline-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .playback-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .playback-btn {
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid #667eea;
+            color: #667eea;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.2s;
+            width: auto;
+            margin: 0;
+        }
+
+        .playback-btn:hover {
+            background: rgba(102, 126, 234, 0.4);
+        }
+
+        .pattern-dna {
+            background: rgba(102, 126, 234, 0.05);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75em;
+        }
+
+        .dna-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .dna-label {
+            color: #888;
+        }
+
+        .dna-value {
+            color: #4ade80;
+        }
+
+        .alert-box {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 0.8em;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        .code-display {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75em;
+            color: #4ade80;
+            word-break: break-all;
+            margin-top: 8px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 0.6s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .sound-visualizer {
+            width: 100%;
+            height: 40px;
+            background: #000;
+            border-radius: 4px;
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sound-bar {
+            position: absolute;
+            bottom: 0;
+            width: 2%;
+            background: linear-gradient(to top, #667eea, #764ba2);
+            transition: height 0.1s;
+        }
+
+        .evolution-graph {
+            width: 100%;
+            height: 100px;
+            background: #000;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            margin-left: 10px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2d3748;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider-toggle {
+            background-color: #667eea;
+        }
+
+        input:checked + .slider-toggle:before {
+            transform: translateX(20px);
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .ai-response {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 0.8em;
+            line-height: 1.4;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+
+        .tool-btn {
+            display: inline-block;
+            padding: 6px 12px;
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid #667eea;
+            border-radius: 4px;
+            color: #667eea;
+            font-size: 0.8em;
+            cursor: pointer;
+            margin: 4px;
+            transition: all 0.2s;
+            width: auto;
+        }
+
+        .tool-btn:hover {
+            background: rgba(102, 126, 234, 0.3);
+        }
+
+        .tool-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .brush-size-indicator {
+            display: inline-block;
+            margin-left: 8px;
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <div class="logo">🌌 CELLULAR AUTOMATON EXPLORER</div>
+            <div class="header-controls">
+                <button id="shareBtn" class="playback-btn">📤 Share Universe</button>
+                <button id="exportBtn" class="playback-btn">💾 Export Video</button>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="soundToggle">
+                    <span class="slider-toggle"></span>
+                </label>
+                <span style="font-size: 0.8em; margin-left: 8px;">🔊 Sound</span>
+            </div>
+        </div>
+
+        <div class="left-panel">
+            <div class="section">
+                <div class="section-title">⚡ SIMULATION</div>
+                <button id="playPauseBtn">▶ Start</button>
+                <button id="stepBtn" class="secondary">⏭ Step</button>
+                <button id="resetBtn" class="secondary">↺ Reset to Gen 0</button>
+                <button id="clearBtn" class="secondary">🗑 Clear All</button>
+                
+                <div class="label-row">
+                    <span style="font-size: 0.8em;">Speed: <span id="speedValue">10</span> fps</span>
+                </div>
+                <input type="range" id="speedSlider" min="1" max="60" value="10">
+            </div>
+
+            <div class="section">
+                <div class="section-title">🎨 DRAWING TOOLS</div>
+                <div>
+                    <span class="tool-btn active" id="drawBtn">✏️ Draw</span>
+                    <span class="tool-btn" id="eraseBtn">🧹 Erase</span>
+                </div>
+                <div class="label-row" style="margin-top: 10px;">
+                    <span style="font-size: 0.8em;">Brush Size: <span class="brush-size-indicator" id="brushSizeValue">1</span></span>
+                </div>
+                <input type="range" id="brushSize" min="1" max="10" value="1">
+            </div>
+
+            <div class="section">
+                <div class="section-title">🎭 PRESETS</div>
+                <div class="preset-grid">
+                    <button class="secondary small" onclick="loadPreset('glider')">Glider</button>
+                    <button class="secondary small" onclick="loadPreset('gosperGun')">Gun</button>
+                    <button class="secondary small" onclick="loadPreset('pulsar')">Pulsar</button>
+                    <button class="secondary small" onclick="loadPreset('random')">Random</button>
+                    <button class="secondary small" onclick="loadPreset('acorn')">Acorn</button>
+                    <button class="secondary small" onclick="loadPreset('diehard')">Diehard</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🌍 MULTIVERSE</div>
+                <button id="forkBtn">🔱 Fork Universe</button>
+                <button id="compareBtn" class="secondary">📊 Compare All</button>
+                <div class="multiverse-container" id="multiverseContainer"></div>
+            </div>
+        </div>
+
+        <div class="main-view">
+            <canvas id="mainCanvas"></canvas>
+        </div>
+
+        <div class="right-panel">
+            <div class="section">
+                <div class="section-title">📊 LIVE STATISTICS</div>
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Generation</div>
+                        <div class="stat-value" id="generation">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Population</div>
+                        <div class="stat-value" id="population">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Density</div>
+                        <div class="stat-value" id="density">0%</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Change</div>
+                        <div class="stat-value" id="changeRate">0%</div>
+                    </div>
+                </div>
+                <div id="alertsContainer"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🧬 PATTERN DNA</div>
+                <div class="pattern-dna" id="patternDNA">
+                    <div class="dna-row">
+                        <span class="dna-label">Symmetry:</span>
+                        <span class="dna-value" id="symmetry">—</span>
+                    </div>
+                    <div class="dna-row">
+                        <span class="dna-label">Stability:</span>
+                        <span class="dna-value" id="stability">—</span>
+                    </div>
+                    <div class="dna-row">
+                        <span class="dna-label">Entropy:</span>
+                        <span class="dna-value" id="entropy">—</span>
+                    </div>
+                    <div class="dna-row">
+                        <span class="dna-label">Classification:</span>
+                        <span class="dna-value" id="classification">—</span>
+                    </div>
+                </div>
+                <button id="analyzeDNABtn" class="secondary">🔬 Deep Analysis (AI)</button>
+                <div id="dnaAnalysis"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">⚙️ RULES</div>
+                <div style="font-family: 'Courier New', monospace; font-size: 0.8em; margin-bottom: 10px;">
+                    <div>B: <span id="birthRules" style="color: #4ade80;">3</span></div>
+                    <div>S: <span id="survivalRules" style="color: #4ade80;">23</span></div>
+                </div>
+                <button id="editRulesBtn" class="secondary">✏️ Edit Rules</button>
+                <button id="evolveRulesBtn" class="secondary">🧬 Evolve Rules</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🤖 AI FEATURES</div>
+                <textarea id="aiPrompt" placeholder="Ask for rules, predict outcomes, analyze patterns..."></textarea>
+                <button id="aiDiscoverBtn">✨ Discover Rules</button>
+                <button id="aiPredictBtn" class="secondary">🔮 Predict Future</button>
+                <button id="aiOptimizeBtn" class="secondary">⚡ Find Interesting</button>
+                <div id="aiResponse"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🔗 SHARE CODE</div>
+                <input type="text" id="shareCode" readonly placeholder="Generate share code...">
+                <button id="generateCodeBtn" class="secondary">🔗 Generate Code</button>
+                <button id="loadCodeBtn" class="secondary">📥 Load from Code</button>
+            </div>
+        </div>
+
+        <div class="timeline">
+            <canvas id="timelineCanvas" class="timeline-canvas"></canvas>
+            <div class="playback-controls">
+                <button class="playback-btn" id="timelineFirst">⏮ First</button>
+                <button class="playback-btn" id="timelineBack">◀ Back</button>
+                <button class="playback-btn" id="timelineFwd">▶ Forward</button>
+                <button class="playback-btn" id="timelineLast">⏭ Last</button>
+                <input type="range" id="timelineScrubber" min="0" max="0" value="0" style="width: 300px; margin: 0 10px;">
+                <span style="font-size: 0.8em; color: #888;">Gen: <span id="timelineGen">0</span></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // CORE STATE & INITIALIZATION
+        // ============================================================
+        
+        const CELL_SIZE = 4;
+        const GRID_WIDTH = 200;
+        const GRID_HEIGHT = 160;
+        
+        const mainCanvas = document.getElementById('mainCanvas');
+        const mainCtx = mainCanvas.getContext('2d');
+        mainCanvas.width = GRID_WIDTH * CELL_SIZE;
+        mainCanvas.height = GRID_HEIGHT * CELL_SIZE;
+
+        const timelineCanvas = document.getElementById('timelineCanvas');
+        const timelineCtx = timelineCanvas.getContext('2d');
+        timelineCanvas.width = timelineCanvas.offsetWidth;
+        timelineCanvas.height = timelineCanvas.offsetHeight;
+
+        let currentUniverse = {
+            id: 0,
+            grid: Array(GRID_HEIGHT).fill().map(() => Array(GRID_WIDTH).fill(false)),
+            history: [],
+            birthRules: [3],
+            survivalRules: [2, 3],
+            generation: 0,
+            metadata: {
+                created: Date.now(),
+                name: 'Universe 0'
+            }
+        };
+
+        let universes = [currentUniverse];
+        let isRunning = false;
+        let speed = 10;
+        let lastFrameTime = 0;
+        let soundEnabled = false;
+        let audioContext = null;
+        let drawMode = 'draw';
+        let brushSize = 1;
+
+        // ============================================================
+        // AUDIO SYNTHESIS
+        // ============================================================
+        
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function sonifyGeneration() {
+            if (!soundEnabled || !audioContext) return;
+            
+            const living = countLiving();
+            const density = living / (GRID_WIDTH * GRID_HEIGHT);
+            const change = currentUniverse.history.length > 1 ? 
+                Math.abs(living - countLivingInGrid(currentUniverse.history[currentUniverse.history.length - 2])) : 0;
+            
+            // Density controls pitch
+            const frequency = 200 + (density * 800);
+            
+            // Change controls volume
+            const volume = Math.min(change / 100, 0.3);
+            
+            if (volume > 0.01) {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            }
+        }
+
+        // ============================================================
+        // GRID OPERATIONS
+        // ============================================================
+        
+        function countNeighbors(grid, x, y) {
+            let count = 0;
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    if (dx === 0 && dy === 0) continue;
+                    const nx = (x + dx + GRID_WIDTH) % GRID_WIDTH;
+                    const ny = (y + dy + GRID_HEIGHT) % GRID_HEIGHT;
+                    if (grid[ny][nx]) count++;
+                }
+            }
+            return count;
+        }
+
+        function updateGrid() {
+            const nextGrid = Array(GRID_HEIGHT).fill().map(() => Array(GRID_WIDTH).fill(false));
+            
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    const neighbors = countNeighbors(currentUniverse.grid, x, y);
+                    if (currentUniverse.grid[y][x]) {
+                        nextGrid[y][x] = currentUniverse.survivalRules.includes(neighbors);
+                    } else {
+                        nextGrid[y][x] = currentUniverse.birthRules.includes(neighbors);
+                    }
+                }
+            }
+            
+            // Store history
+            currentUniverse.history.push(JSON.parse(JSON.stringify(currentUniverse.grid)));
+            if (currentUniverse.history.length > 1000) {
+                currentUniverse.history.shift();
+            }
+            
+            currentUniverse.grid = nextGrid;
+            currentUniverse.generation++;
+            
+            sonifyGeneration();
+            updateDisplay();
+            updateTimeline();
+            analyzePattern();
+        }
+
+        function countLiving() {
+            return currentUniverse.grid.flat().filter(c => c).length;
+        }
+
+        function countLivingInGrid(grid) {
+            return grid.flat().filter(c => c).length;
+        }
+
+        // ============================================================
+        // RENDERING
+        // ============================================================
+        
+        function drawGrid() {
+            mainCtx.fillStyle = '#000';
+            mainCtx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+            
+            mainCtx.fillStyle = '#667eea';
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    if (currentUniverse.grid[y][x]) {
+                        mainCtx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 0.5, CELL_SIZE - 0.5);
+                    }
+                }
+            }
+        }
+
+        function updateDisplay() {
+            drawGrid();
+            
+            const living = countLiving();
+            const total = GRID_WIDTH * GRID_HEIGHT;
+            const density = ((living / total) * 100).toFixed(1);
+            
+            let changeRate = 0;
+            if (currentUniverse.history.length > 1) {
+                const prevLiving = countLivingInGrid(currentUniverse.history[currentUniverse.history.length - 1]);
+                changeRate = prevLiving > 0 ? ((Math.abs(living - prevLiving) / prevLiving) * 100).toFixed(1) : 0;
+            }
+            
+            document.getElementById('generation').textContent = currentUniverse.generation;
+            document.getElementById('population').textContent = living;
+            document.getElementById('density').textContent = density + '%';
+            document.getElementById('changeRate').textContent = changeRate + '%';
+            
+            checkForAlerts(living, changeRate);
+        }
+
+        function updateTimeline() {
+            const width = timelineCanvas.width;
+            const height = timelineCanvas.height;
+            
+            timelineCtx.fillStyle = '#000';
+            timelineCtx.fillRect(0, 0, width, height);
+            
+            if (currentUniverse.history.length < 2) return;
+            
+            const maxPoints = Math.min(currentUniverse.history.length, width);
+            const step = currentUniverse.history.length / maxPoints;
+            
+            timelineCtx.strokeStyle = '#667eea';
+            timelineCtx.lineWidth = 2;
+            timelineCtx.beginPath();
+            
+            for (let i = 0; i < maxPoints; i++) {
+                const historyIndex = Math.floor(i * step);
+                const living = countLivingInGrid(currentUniverse.history[historyIndex]);
+                const y = height - (living / (GRID_WIDTH * GRID_HEIGHT)) * height;
+                const x = (i / maxPoints) * width;
+                
+                if (i === 0) {
+                    timelineCtx.moveTo(x, y);
+                } else {
+                    timelineCtx.lineTo(x, y);
+                }
+            }
+            
+            timelineCtx.stroke();
+            
+            // Update scrubber
+            document.getElementById('timelineScrubber').max = currentUniverse.history.length;
+            document.getElementById('timelineScrubber').value = currentUniverse.history.length;
+            document.getElementById('timelineGen').textContent = currentUniverse.generation;
+        }
+
+        function checkForAlerts(living, changeRate) {
+            const container = document.getElementById('alertsContainer');
+            const alerts = [];
+            
+            if (currentUniverse.generation > 10 && changeRate > 50) {
+                alerts.push('⚠️ High volatility detected!');
+            }
+            
+            if (living < 5 && currentUniverse.generation > 10) {
+                alerts.push('💀 Near extinction!');
+            }
+            
+            if (changeRate < 1 && living > 20 && currentUniverse.generation > 20) {
+                alerts.push('⚖️ Stable equilibrium');
+            }
+            
+            container.innerHTML = alerts.map(a => `<div class="alert-box">${a}</div>`).join('');
+        }
+
+        // ============================================================
+        // PATTERN ANALYSIS
+        // ============================================================
+        
+        function analyzePattern() {
+            if (currentUniverse.generation < 5) return;
+            
+            // Symmetry detection (simple version)
+            let symmetryScore = 0;
+            for (let y = 0; y < GRID_HEIGHT / 2; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    if (currentUniverse.grid[y][x] === currentUniverse.grid[GRID_HEIGHT - 1 - y][x]) {
+                        symmetryScore++;
+                    }
+                }
+            }
+            const symmetry = ((symmetryScore / (GRID_WIDTH * GRID_HEIGHT / 2)) * 100).toFixed(0);
+            
+            // Stability (change over last 5 generations)
+            let stability = 100;
+            if (currentUniverse.history.length >= 5) {
+                const recent = currentUniverse.history.slice(-5);
+                const populations = recent.map(g => countLivingInGrid(g));
+                const variance = populations.reduce((sum, p, i, arr) => {
+                    const mean = arr.reduce((a, b) => a + b) / arr.length;
+                    return sum + Math.pow(p - mean, 2);
+                }, 0) / populations.length;
+                stability = Math.max(0, 100 - variance / 10).toFixed(0);
+            }
+            
+            // Entropy (randomness)
+            let entropy = 0;
+            for (let y = 0; y < GRID_HEIGHT - 1; y++) {
+                for (let x = 0; x < GRID_WIDTH - 1; x++) {
+                    if (currentUniverse.grid[y][x] !== currentUniverse.grid[y][x + 1] ||
+                        currentUniverse.grid[y][x] !== currentUniverse.grid[y + 1][x]) {
+                        entropy++;
+                    }
+                }
+            }
+            entropy = ((entropy / (GRID_WIDTH * GRID_HEIGHT)) * 100).toFixed(0);
+            
+            // Classification
+            let classification = 'Unknown';
+            if (stability > 80) classification = 'Still Life';
+            else if (stability > 60 && symmetry > 60) classification = 'Oscillator';
+            else if (stability < 40 && entropy > 60) classification = 'Chaotic';
+            else if (stability > 50 && entropy < 40) classification = 'Spaceship';
+            
+            document.getElementById('symmetry').textContent = symmetry + '%';
+            document.getElementById('stability').textContent = stability + '%';
+            document.getElementById('entropy').textContent = entropy + '%';
+            document.getElementById('classification').textContent = classification;
+        }
+
+        // ============================================================
+        // MOUSE INTERACTION
+        // ============================================================
+        
+        let isDrawing = false;
+        
+        mainCanvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            handleDraw(e);
+        });
+        
+        mainCanvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) handleDraw(e);
+        });
+        
+        mainCanvas.addEventListener('mouseup', () => isDrawing = false);
+        mainCanvas.addEventListener('mouseleave', () => isDrawing = false);
+        
+        function handleDraw(e) {
+            const rect = mainCanvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
+            const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+            
+            for (let dy = -brushSize + 1; dy < brushSize; dy++) {
+                for (let dx = -brushSize + 1; dx < brushSize; dx++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx >= 0 && nx < GRID_WIDTH && ny >= 0 && ny < GRID_HEIGHT) {
+                        if (Math.sqrt(dx * dx + dy * dy) < brushSize) {
+                            currentUniverse.grid[ny][nx] = (drawMode === 'draw');
+                        }
+                    }
+                }
+            }
+            
+            drawGrid();
+        }
+
+        // ============================================================
+        // CONTROLS
+        // ============================================================
+        
+        document.getElementById('playPauseBtn').addEventListener('click', () => {
+            isRunning = !isRunning;
+            document.getElementById('playPauseBtn').textContent = isRunning ? '⏸ Pause' : '▶ Start';
+        });
+        
+        document.getElementById('stepBtn').addEventListener('click', () => updateGrid());
+        
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (currentUniverse.history.length > 0) {
+                currentUniverse.grid = JSON.parse(JSON.stringify(currentUniverse.history[0]));
+                currentUniverse.generation = 0;
+                updateDisplay();
+            }
+        });
+        
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            currentUniverse.grid = Array(GRID_HEIGHT).fill().map(() => Array(GRID_WIDTH).fill(false));
+            currentUniverse.history = [];
+            currentUniverse.generation = 0;
+            updateDisplay();
+        });
+        
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            speed = parseInt(e.target.value);
+            document.getElementById('speedValue').textContent = speed;
+        });
+        
+        document.getElementById('soundToggle').addEventListener('change', (e) => {
+            soundEnabled = e.target.checked;
+            if (soundEnabled) initAudio();
+        });
+        
+        document.getElementById('drawBtn').addEventListener('click', () => {
+            drawMode = 'draw';
+            document.getElementById('drawBtn').classList.add('active');
+            document.getElementById('eraseBtn').classList.remove('active');
+        });
+        
+        document.getElementById('eraseBtn').addEventListener('click', () => {
+            drawMode = 'erase';
+            document.getElementById('eraseBtn').classList.add('active');
+            document.getElementById('drawBtn').classList.remove('active');
+        });
+        
+        document.getElementById('brushSize').addEventListener('input', (e) => {
+            brushSize = parseInt(e.target.value);
+            document.getElementById('brushSizeValue').textContent = brushSize;
+        });
+
+        // ============================================================
+        // PRESETS
+        // ============================================================
+        
+        function loadPreset(name) {
+            currentUniverse.grid = Array(GRID_HEIGHT).fill().map(() => Array(GRID_WIDTH).fill(false));
+            currentUniverse.history = [];
+            currentUniverse.generation = 0;
+            
+            const cx = Math.floor(GRID_WIDTH / 2);
+            const cy = Math.floor(GRID_HEIGHT / 2);
+            
+            switch(name) {
+                case 'glider':
+                    [[0,1],[1,2],[2,0],[2,1],[2,2]].forEach(([dy,dx]) => {
+                        currentUniverse.grid[cy+dy][cx+dx] = true;
+                    });
+                    break;
+                case 'gosperGun':
+                    const gun = [[0,24],[1,22],[1,24],[2,12],[2,13],[2,20],[2,21],[2,34],[2,35],[3,11],[3,15],[3,20],[3,21],[3,34],[3,35],[4,0],[4,1],[4,10],[4,16],[4,20],[4,21],[5,0],[5,1],[5,10],[5,14],[5,16],[5,17],[5,22],[5,24],[6,10],[6,16],[6,24],[7,11],[7,15],[8,12],[8,13]];
+                    gun.forEach(([y,x]) => {
+                        if (cy+y < GRID_HEIGHT && cx+x < GRID_WIDTH) {
+                            currentUniverse.grid[cy+y][cx+x] = true;
+                        }
+                    });
+                    break;
+                case 'pulsar':
+                    [[2,4],[2,5],[2,6],[2,10],[2,11],[2,12],[4,2],[4,7],[4,9],[4,14],[5,2],[5,7],[5,9],[5,14],[6,2],[6,7],[6,9],[6,14],[7,4],[7,5],[7,6],[7,10],[7,11],[7,12],[9,4],[9,5],[9,6],[9,10],[9,11],[9,12],[10,2],[10,7],[10,9],[10,14],[11,2],[11,7],[11,9],[11,14],[12,2],[12,7],[12,9],[12,14],[14,4],[14,5],[14,6],[14,10],[14,11],[14,12]].forEach(([dy,dx]) => {
+                        currentUniverse.grid[cy+dy-7][cx+dx-7] = true;
+                    });
+                    break;
+                case 'acorn':
+                    [[0,1],[1,3],[2,0],[2,1],[2,4],[2,5],[2,6]].forEach(([dy,dx]) => {
+                        currentUniverse.grid[cy+dy][cx+dx] = true;
+                    });
+                    break;
+                case 'diehard':
+                    [[0,6],[1,0],[1,1],[2,1],[2,5],[2,6],[2,7]].forEach(([dy,dx]) => {
+                        currentUniverse.grid[cy+dy][cx+dx] = true;
+                    });
+                    break;
+                case 'random':
+                    for (let y = 0; y < GRID_HEIGHT; y++) {
+                        for (let x = 0; x < GRID_WIDTH; x++) {
+                            currentUniverse.grid[y][x] = Math.random() < 0.15;
+                        }
+                    }
+                    break;
+            }
+            
+            updateDisplay();
+        }
+
+        // ============================================================
+        // MULTIVERSE
+        // ============================================================
+        
+        document.getElementById('forkBtn').addEventListener('click', () => {
+            const newUniverse = {
+                id: universes.length,
+                grid: JSON.parse(JSON.stringify(currentUniverse.grid)),
+                history: [],
+                birthRules: [...currentUniverse.birthRules],
+                survivalRules: [...currentUniverse.survivalRules],
+                generation: 0,
+                metadata: {
+                    created: Date.now(),
+                    name: `Universe ${universes.length}`,
+                    forkedFrom: currentUniverse.id
+                }
+            };
+            
+            universes.push(newUniverse);
+            updateMultiverseDisplay();
+        });
+        
+        function updateMultiverseDisplay() {
+            const container = document.getElementById('multiverseContainer');
+            container.innerHTML = universes.map((u, i) => `
+                <div class="universe-card ${u.id === currentUniverse.id ? 'active' : ''}" onclick="switchUniverse(${i})">
+                    <canvas class="universe-preview" id="preview-${i}" width="120" height="96"></canvas>
+                    <div class="universe-info">
+                        ${u.metadata.name}<br>
+                        Gen: ${u.generation}
+                    </div>
+                </div>
+            `).join('');
+            
+            // Draw previews
+            setTimeout(() => {
+                universes.forEach((u, i) => {
+                    const canvas = document.getElementById(`preview-${i}`);
+                    if (canvas) {
+                        const ctx = canvas.getContext('2d');
+                        const scale = 120 / GRID_WIDTH;
+                        ctx.fillStyle = '#000';
+                        ctx.fillRect(0, 0, 120, 96);
+                        ctx.fillStyle = '#667eea';
+                        for (let y = 0; y < GRID_HEIGHT; y++) {
+                            for (let x = 0; x < GRID_WIDTH; x++) {
+                                if (u.grid[y][x]) {
+                                    ctx.fillRect(x * scale, y * scale, scale, scale);
+                                }
+                            }
+                        }
+                    }
+                });
+            }, 10);
+        }
+        
+        function switchUniverse(index) {
+            currentUniverse = universes[index];
+            updateDisplay();
+            updateMultiverseDisplay();
+            updateRulesDisplay();
+        }
+
+        // ============================================================
+        // RULES
+        // ============================================================
+        
+        function updateRulesDisplay() {
+            document.getElementById('birthRules').textContent = currentUniverse.birthRules.join('');
+            document.getElementById('survivalRules').textContent = currentUniverse.survivalRules.join('');
+        }
+        
+        document.getElementById('editRulesBtn').addEventListener('click', () => {
+            const birth = prompt('Birth rules (e.g., 3 or 36):', currentUniverse.birthRules.join(''));
+            const survival = prompt('Survival rules (e.g., 23 or 12345):', currentUniverse.survivalRules.join(''));
+            
+            if (birth) currentUniverse.birthRules = birth.split('').map(n => parseInt(n)).filter(n => !isNaN(n));
+            if (survival) currentUniverse.survivalRules = survival.split('').map(n => parseInt(n)).filter(n => !isNaN(n));
+            
+            updateRulesDisplay();
+        });
+        
+        document.getElementById('evolveRulesBtn').addEventListener('click', () => {
+            // Randomly mutate one rule
+            if (Math.random() > 0.5) {
+                const newRule = Math.floor(Math.random() * 9);
+                if (!currentUniverse.birthRules.includes(newRule)) {
+                    currentUniverse.birthRules.push(newRule);
+                }
+            } else {
+                const newRule = Math.floor(Math.random() * 9);
+                if (!currentUniverse.survivalRules.includes(newRule)) {
+                    currentUniverse.survivalRules.push(newRule);
+                }
+            }
+            updateRulesDisplay();
+        });
+
+        // ============================================================
+        // AI FEATURES
+        // ============================================================
+        
+        document.getElementById('aiDiscoverBtn').addEventListener('click', async () => {
+            const prompt = document.getElementById('aiPrompt').value;
+            if (!prompt) return;
+            
+            const responseDiv = document.getElementById('aiResponse');
+            responseDiv.innerHTML = 'Thinking...<span class="loading"></span>';
+            
+            try {
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 1000,
+                        messages: [{
+                            role: "user",
+                            content: `Design cellular automaton rules for: "${prompt}". Respond with ONLY valid JSON: {"birth": [3], "survival": [2,3], "explanation": "why", "preset": "glider"}`
+                        }]
+                    })
+                });
+                
+                const data = await response.json();
+                const content = data.content.find(c => c.type === 'text')?.text || '';
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                
+                if (jsonMatch) {
+                    const rules = JSON.parse(jsonMatch[0]);
+                    currentUniverse.birthRules = rules.birth;
+                    currentUniverse.survivalRules = rules.survival;
+                    updateRulesDisplay();
+                    
+                    responseDiv.innerHTML = `<strong>✨ Rules Generated</strong><br>${rules.explanation}<br><br>Try: ${rules.preset}`;
+                }
+            } catch (error) {
+                responseDiv.innerHTML = 'Error: ' + error.message;
+            }
+        });
+        
+        document.getElementById('aiPredictBtn').addEventListener('click', async () => {
+            const responseDiv = document.getElementById('aiResponse');
+            responseDiv.innerHTML = 'Analyzing...<span class="loading"></span>';
+            
+            // Encode current state
+            const living = countLiving();
+            const density = (living / (GRID_WIDTH * GRID_HEIGHT) * 100).toFixed(1);
+            const rules = `B${currentUniverse.birthRules.join('')}/S${currentUniverse.survivalRules.join('')}`;
+            
+            try {
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 1000,
+                        messages: [{
+                            role: "user",
+                            content: `Predict the future of this cellular automaton:
+Rules: ${rules}
+Current generation: ${currentUniverse.generation}
+Population: ${living} cells (${density}% density)
+Recent trend: ${currentUniverse.history.length > 5 ? 'available' : 'not enough data'}
+
+Predict what will likely happen in the next 50-100 generations. Will it stabilize, explode, die out, or oscillate?`
+                        }]
+                    })
+                });
+                
+                const data = await response.json();
+                const content = data.content.find(c => c.type === 'text')?.text || '';
+                responseDiv.innerHTML = '<strong>🔮 Prediction</strong><br>' + content;
+            } catch (error) {
+                responseDiv.innerHTML = 'Error: ' + error.message;
+            }
+        });
+        
+        document.getElementById('aiOptimizeBtn').addEventListener('click', async () => {
+            const responseDiv = document.getElementById('aiResponse');
+            responseDiv.innerHTML = 'Finding interesting moments...<span class="loading"></span>';
+            
+            // Run simulation for 200 generations and find peaks
+            const snapshot = JSON.parse(JSON.stringify(currentUniverse.grid));
+            let maxPop = 0;
+            let maxGen = 0;
+            let minPop = Infinity;
+            let minGen = 0;
+            
+            for (let i = 0; i < 200; i++) {
+                updateGrid();
+                const pop = countLiving();
+                if (pop > maxPop) {
+                    maxPop = pop;
+                    maxGen = i;
+                }
+                if (pop < minPop && pop > 0) {
+                    minPop = pop;
+                    minGen = i;
+                }
+            }
+            
+            currentUniverse.grid = snapshot;
+            currentUniverse.generation = 0;
+            updateDisplay();
+            
+            responseDiv.innerHTML = `<strong>⚡ Analysis Complete</strong><br>
+                Peak population: ${maxPop} cells at gen ${maxGen}<br>
+                Minimum: ${minPop} cells at gen ${minGen}<br>
+                Most interesting moment: gen ${maxGen}`;
+        });
+        
+        document.getElementById('analyzeDNABtn').addEventListener('click', async () => {
+            const responseDiv = document.getElementById('dnaAnalysis');
+            responseDiv.innerHTML = '<div class="ai-response">Analyzing pattern DNA...<span class="loading"></span></div>';
+            
+            const symmetry = document.getElementById('symmetry').textContent;
+            const stability = document.getElementById('stability').textContent;
+            const entropy = document.getElementById('entropy').textContent;
+            const classification = document.getElementById('classification').textContent;
+            
+            try {
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 1000,
+                        messages: [{
+                            role: "user",
+                            content: `Analyze this cellular automaton pattern:
+Symmetry: ${symmetry}
+Stability: ${stability}
+Entropy: ${entropy}
+Classification: ${classification}
+Rules: B${currentUniverse.birthRules.join('')}/S${currentUniverse.survivalRules.join('')}
+Generation: ${currentUniverse.generation}
+
+Provide insights about this pattern's behavior and what makes it unique.`
+                        }]
+                    })
+                });
+                
+                const data = await response.json();
+                const content = data.content.find(c => c.type === 'text')?.text || '';
+                responseDiv.innerHTML = '<div class="ai-response"><strong>🧬 Deep Analysis</strong><br>' + content + '</div>';
+            } catch (error) {
+                responseDiv.innerHTML = '<div class="ai-response">Error: ' + error.message + '</div>';
+            }
+        });
+
+        // ============================================================
+        // SHARE CODE
+        // ============================================================
+        
+        document.getElementById('generateCodeBtn').addEventListener('click', () => {
+            const state = {
+                grid: currentUniverse.grid,
+                birth: currentUniverse.birthRules,
+                survival: currentUniverse.survivalRules,
+                gen: currentUniverse.generation
+            };
+            
+            // Compress and encode
+            const json = JSON.stringify(state);
+            const encoded = btoa(json);
+            const shareCode = encoded.substring(0, 50) + '...'; // Truncate for display
+            
+            document.getElementById('shareCode').value = shareCode;
+            
+            // In real implementation, this would be uploaded to a server
+            alert('Share code generated! (In full implementation, this would create a shareable link)');
+        });
+        
+        document.getElementById('loadCodeBtn').addEventListener('click', () => {
+            const code = prompt('Enter share code:');
+            if (code) {
+                try {
+                    const decoded = atob(code);
+                    const state = JSON.parse(decoded);
+                    
+                    currentUniverse.grid = state.grid;
+                    currentUniverse.birthRules = state.birth;
+                    currentUniverse.survivalRules = state.survival;
+                    currentUniverse.generation = state.gen;
+                    
+                    updateDisplay();
+                    updateRulesDisplay();
+                } catch (error) {
+                    alert('Invalid share code!');
+                }
+            }
+        });
+
+        // ============================================================
+        // TIMELINE CONTROLS
+        // ============================================================
+        
+        document.getElementById('timelineScrubber').addEventListener('input', (e) => {
+            const index = parseInt(e.target.value);
+            if (index < currentUniverse.history.length) {
+                currentUniverse.grid = JSON.parse(JSON.stringify(currentUniverse.history[index]));
+                currentUniverse.generation = index;
+                updateDisplay();
+            }
+        });
+        
+        document.getElementById('timelineFirst').addEventListener('click', () => {
+            if (currentUniverse.history.length > 0) {
+                currentUniverse.grid = JSON.parse(JSON.stringify(currentUniverse.history[0]));
+                currentUniverse.generation = 0;
+                updateDisplay();
+            }
+        });
+        
+        document.getElementById('timelineBack').addEventListener('click', () => {
+            const index = Math.max(0, currentUniverse.generation - 1);
+            if (index < currentUniverse.history.length) {
+                currentUniverse.grid = JSON.parse(JSON.stringify(currentUniverse.history[index]));
+                currentUniverse.generation = index;
+                updateDisplay();
+            }
+        });
+        
+        document.getElementById('timelineFwd').addEventListener('click', () => {
+            const index = Math.min(currentUniverse.history.length - 1, currentUniverse.generation + 1);
+            if (index >= 0 && index < currentUniverse.history.length) {
+                currentUniverse.grid = JSON.parse(JSON.stringify(currentUniverse.history[index]));
+                currentUniverse.generation = index;
+                updateDisplay();
+            }
+        });
+        
+        document.getElementById('timelineLast').addEventListener('click', () => {
+            if (currentUniverse.history.length > 0) {
+                const index = currentUniverse.history.length - 1;
+                currentUniverse.grid = JSON.parse(JSON.stringify(currentUniverse.history[index]));
+                currentUniverse.generation = index;
+                updateDisplay();
+            }
+        });
+
+        // ============================================================
+        // EXPORT (STUB)
+        // ============================================================
+        
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            alert('Share feature would generate a URL with the current universe state encoded');
+        });
+        
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            alert('Video export would use MediaRecorder API to capture canvas animation');
+        });
+        
+        document.getElementById('compareBtn').addEventListener('click', () => {
+            alert('Compare mode would show all universes side-by-side with synchronized playback');
+        });
+
+        // ============================================================
+        // ANIMATION LOOP
+        // ============================================================
+        
+        function animate(timestamp) {
+            if (isRunning) {
+                const elapsed = timestamp - lastFrameTime;
+                const interval = 1000 / speed;
+                
+                if (elapsed >= interval) {
+                    updateGrid();
+                    lastFrameTime = timestamp;
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // ============================================================
+        // INITIALIZE
+        // ============================================================
+        
+        updateDisplay();
+        updateRulesDisplay();
+        updateMultiverseDisplay();
+        requestAnimationFrame(animate);
+        
+    </script>
+</body>
+</html>

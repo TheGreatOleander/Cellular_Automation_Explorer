@@ -1,4 +1,4 @@
-# 🌌 Cellular Automaton Explorer - MAXIMIZED EDITION
+# 🌌 Cellular Automaton Explorer
 
 **The most advanced web-based cellular automaton playground ever built.**
 
